@@ -1,0 +1,27 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual Studio 2010
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "command_console_app", "command_console_app\command_console_app.csproj", "{88FE7B76-60E3-4C9B-B10B-B8967BC32C73}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "command_console", "command_console\command_console.csproj", "{CE92AF47-6165-44A4-B78F-9F657441DFC8}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x86 = Debug|x86
+		Release|x86 = Release|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{88FE7B76-60E3-4C9B-B10B-B8967BC32C73}.Debug|x86.ActiveCfg = Debug|x86
+		{88FE7B76-60E3-4C9B-B10B-B8967BC32C73}.Debug|x86.Build.0 = Debug|x86
+		{88FE7B76-60E3-4C9B-B10B-B8967BC32C73}.Release|x86.ActiveCfg = Release|x86
+		{88FE7B76-60E3-4C9B-B10B-B8967BC32C73}.Release|x86.Build.0 = Release|x86
+		{CE92AF47-6165-44A4-B78F-9F657441DFC8}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{CE92AF47-6165-44A4-B78F-9F657441DFC8}.Debug|x86.Build.0 = Debug|Any CPU
+		{CE92AF47-6165-44A4-B78F-9F657441DFC8}.Release|x86.ActiveCfg = Release|Any CPU
+		{CE92AF47-6165-44A4-B78F-9F657441DFC8}.Release|x86.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(MonoDevelopProperties) = preSolution
+		BaseDirectory = command_console
+		StartupItem = command_console_app\command_console_app.csproj
+	EndGlobalSection
+EndGlobal
