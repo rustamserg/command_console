@@ -11,13 +11,19 @@ Provide next features:
 - Copy commands from clipboard
 - Commands history
 - Multilines output support
+- PageUp and PageDown scrolling
+- Proxy mode to use the same interface with native console
 
 ## Initialization ##
 
 Main thread is responsible to initialize a console and start it. Once it runs the execution thread is blocked and waits till the console will be closed by external command handler.
 
-	CommandConsole.Init (80, 40, ConsoleColor.Yellow);
-	CommandConsole.Run ();
+	var console = ConsoleFactory.Get (ConsoleFactory.Type.Command)
+	console.Init (80, 40, ConsoleColor.Yellow);
+	console.Run ();
+
+
+_Run_ function by default blocks thread execution, however it is possible to run it with _false_ argument to release call immediatly.
 
 ## Command handler ##
 

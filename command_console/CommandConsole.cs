@@ -6,25 +6,28 @@ using System.Windows.Forms;
 
 namespace command_console
 {
-	public static class CommandConsole
+	public class CommandConsole : IConsole
 	{
-		public delegate void OnCommandHandler (string cmd);
-		public static event OnCommandHandler OnCommand;
+		public event OnCommandHandler OnCommand;
 
-		public static bool IsAlive { get; set; }
-		public static int Width { get; private set; }
-		public static int Height { get; private set; }
-		public static ConsoleColor CommandColor { get; set; }
+		public bool IsAlive { get; private set; }
+		public int Width { get; private set; }
+		public int Height { get; private set; }
+		public ConsoleColor CommandColor { get; set; }
 
 
 		private static readonly int BUF_SIZE = 1024;
 		private static readonly int HISTORY_SIZE = 100;
-		private static string[] m_buffer = new string[BUF_SIZE];
-		private static string[] m_history = new string[HISTORY_SIZE];
-		private static int m_historyCursor = HISTORY_SIZE - 1;
+		private string[] m_buffer = new string[BUF_SIZE];
+		private string[] m_history = new string[HISTORY_SIZE];
+		private int m_historyCursor = HISTORY_SIZE - 1;
+		private Thread m_inputThread;
+		private AutoResetEvent m_blockEvent;
+		private bool m_isNewLine = false;
+		private int m_bufPos = BUF_SIZE;
 
 
-		public static void Init(int width, int height, ConsoleColor cmdColor = ConsoleColor.White)
+		public void Init(int width, int height, ConsoleColor cmdColor = ConsoleColor.White)
 		{
 			Width = width;
 			Height = height;
@@ -42,29 +45,34 @@ namespace command_console
 			}
 		}
 
-		public static void Run()
+		public void Run(bool isBlocking = true)
 		{
-			Thread inputThread = new Thread (Input);
-			inputThread.SetApartmentState(ApartmentState.STA); 
-			inputThread.Start ();
+			m_inputThread = new Thread (Input);
+			m_inputThread.SetApartmentState(ApartmentState.STA); 
+			m_inputThread.Start ();
 			IsAlive = true;
 
-			while (IsAlive) {
-				Thread.Sleep (10);
+			if (isBlocking) {
+				m_blockEvent = new AutoResetEvent (false);
+				m_blockEvent.WaitOne ();
 			}
+		}
+
+		public void Stop()
+		{
+			IsAlive = false;
+
+			if (m_blockEvent != null)
+				m_blockEvent.Set ();
 
 			try {
-				inputThread.Abort();
+				if (m_inputThread.IsAlive)
+					m_inputThread.Abort();
 			}
 			catch (Exception) {}
 		}
 
-		public static void Stop()
-		{
-			IsAlive = false;
-		}
-
-		public static void Write(string line)
+		public void Write(string line)
 		{
 			if (!IsAlive)
 				return;
@@ -72,7 +80,7 @@ namespace command_console
 			AppendToBuffer (line);
 		}
 
-		public static void Write(string format, params object[] args)
+		public void Write(string format, params object[] args)
 		{
 			if (!IsAlive)
 				return;
@@ -81,7 +89,7 @@ namespace command_console
 			AppendToBuffer (line);
 		}
 
-		public static void WriteLine(string line)
+		public void WriteLine(string line)
 		{
 			if (!IsAlive)
 				return;
@@ -89,7 +97,7 @@ namespace command_console
 			AddToBuffer(line);
 		}
 
-		public static void WriteLine(string format, params object[] args)
+		public void WriteLine(string format, params object[] args)
 		{
 			if (!IsAlive)
 				return;
@@ -98,7 +106,7 @@ namespace command_console
 			AddToBuffer (line);
 		}	
 		
-		private static void Input()
+		private void Input()
 		{
 			while (true) {
 				var cmd = string.Empty;
@@ -117,6 +125,10 @@ namespace command_console
 						cmd = GetPrevHistoryCmd ();
 					else if ((keyInfo.Modifiers & ConsoleModifiers.Control) != 0 && keyInfo.Key == ConsoleKey.V)
 						cmd = Clipboard.GetText ();
+					else if (keyInfo.Key == ConsoleKey.PageUp)
+						ScrollBufferUp ();
+					else if (keyInfo.Key == ConsoleKey.PageDown)
+						ScrollBufferDown ();
 					else
 						cmd += keyInfo.KeyChar.ToString ();
 
@@ -134,7 +146,7 @@ namespace command_console
 			}
 		}
 		
-		private static void ProcessCmd(string cmd)
+		private void ProcessCmd(string cmd)
 		{
 			if (OnCommand != null)
 				OnCommand (cmd);
@@ -142,7 +154,7 @@ namespace command_console
 			AddToHistoryCmd(cmd);
 		}
 
-		private static void DrawCmdBuffer(string cmd)
+		private void DrawCmdBuffer(string cmd)
 		{
 			lock (m_buffer) {
 				Console.SetCursorPosition (0, Height - 1);
@@ -153,7 +165,7 @@ namespace command_console
 			}
 		}
 
-		private static string GetNextHistoryCmd()
+		private string GetNextHistoryCmd()
 		{
 			var cmd = m_history [m_historyCursor];
 			if (!string.IsNullOrEmpty(cmd))
@@ -161,14 +173,14 @@ namespace command_console
 			return cmd;
 		}
 
-		private static string GetPrevHistoryCmd()
+		private string GetPrevHistoryCmd()
 		{
 			var cmd = m_history [m_historyCursor];
 			m_historyCursor = Math.Min (HISTORY_SIZE - 1, m_historyCursor + 1);
 			return cmd;
 		}
 
-		private static void AddToHistoryCmd(string cmd)
+		private void AddToHistoryCmd(string cmd)
 		{
 			for (int idx = 0; idx < HISTORY_SIZE - 1; idx++) {
 				m_history [idx] = m_history [idx + 1];
@@ -176,38 +188,71 @@ namespace command_console
 			m_history [HISTORY_SIZE - 1] = cmd;
 		}
 
-		private static void AppendToBuffer(string line)
+		private void AppendToBuffer(string line)
 		{
 			lock (m_buffer) {
+				if (m_isNewLine) {
+					PushToBuffer (string.Empty);
+					m_isNewLine = false;
+				}
+
 				var merged = m_buffer [BUF_SIZE - 1] + line;
 				var lines = merged.Replace("\r", "").Split ('\n');
 
 				m_buffer [BUF_SIZE - 1] = lines [0];
+				m_isNewLine = lines.Length > 1;
+
 				for (int i = 1; i < lines.Length; i++) {
-					AddToBuffer (lines [i]);
+					PushToBuffer (lines [i]);
 				}
 				DrawBuffer ();
 			}
 		}
 
-		private static void AddToBuffer(string line)
+		private void AddToBuffer(string line)
 		{
 			lock (m_buffer) {
-				var lines = line.Replace("\r", "").Split ('\n');
-				for (int i = 0; i < lines.Length; i++) {				
-					for (int idx = 0; idx < BUF_SIZE - 1; idx++) {
-						m_buffer [idx] = m_buffer [idx + 1];
-					}
-					m_buffer [BUF_SIZE - 1] = lines [i];
+				if (m_isNewLine) {
+					PushToBuffer (string.Empty);
+					m_isNewLine = false;
+				}
+
+				var merged = m_buffer [BUF_SIZE - 1] + line;
+				var lines = merged.Replace("\r", "").Split ('\n');
+
+				m_buffer [BUF_SIZE - 1] = lines [0];
+				m_isNewLine = true;
+
+				for (int i = 1; i < lines.Length; i++) {
+					PushToBuffer (lines [i]);
 				}
 				DrawBuffer ();
 			}
 		}
 
-		private static void DrawBuffer()
+		private void PushToBuffer(string line)
+		{
+			for (int idx = 0; idx < BUF_SIZE - 1; idx++) {
+				m_buffer [idx] = m_buffer [idx + 1];
+			}
+			m_buffer [BUF_SIZE - 1] = line;
+		}
+
+
+		private void ScrollBufferUp()
+		{
+			m_bufPos = Math.Max (Height - 1, m_bufPos - (Height - 1));
+		}
+
+		private void ScrollBufferDown()
+		{
+			m_bufPos = Math.Min (BUF_SIZE, m_bufPos + (Height - 1));
+		}
+
+		private void DrawBuffer()
 		{
 			lock (m_buffer) {
-				int bufPos = BUF_SIZE - (Height - 1);
+				int bufPos = m_bufPos - (Height - 1);
 
 				Console.SetCursorPosition (0, 0);
 

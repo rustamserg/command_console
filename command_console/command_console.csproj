@@ -37,6 +37,9 @@
     <Compile Include="CommandConsole.cs">
       <DependentUpon>MyClass.cs</DependentUpon>
     </Compile>
+    <Compile Include="IConsole.cs" />
+    <Compile Include="ProxyConsole.cs" />
+    <Compile Include="ConsoleFactory.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
 </Project>

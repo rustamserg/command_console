@@ -7,11 +7,12 @@ namespace command_console_app
 	{
 		public static void Main (string[] args)
 		{
-			CommandConsole.Init (80, 40, ConsoleColor.Yellow);
+			var cs = ConsoleFactory.Get (ConsoleFactory.Type.Command);
+			cs.Init (80, 40, ConsoleColor.Yellow);
 
-			TestApp test = new TestApp ();
+			TestApp test = new TestApp (cs);
 	
-			CommandConsole.Run ();
+			cs.Run ();
 		}
 	}
 }
