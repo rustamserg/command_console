@@ -29,14 +29,14 @@ _Run_ function by default blocks thread execution, however it is possible to run
 
 Application code can subscribe to _OnCommand_ event to handle commands from input prompt.
 
-	CommandConsole.OnCommand += OnCommand;
+	m_console.OnCommand += OnCommand;
 
 For example we can close the console in the handler:
 
 	private void OnCommand(string cmd)
 	{
 		if (cmd == "quit") {
-			CommandConsole.Stop ();
+			m_console.Stop ();
 		}
 	}
 
