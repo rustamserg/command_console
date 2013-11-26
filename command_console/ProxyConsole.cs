@@ -11,14 +11,14 @@ namespace command_console
 		public int Height { get; private set; }
 		public ConsoleColor CommandColor { get; set; }
 
-		public void Init(ConsoleColor cmdColor = ConsoleColor.White)
+		public void Init(ConsoleColor cmdColor)
 		{
 			Width = Console.WindowWidth;
 			Height = Console.WindowHeight;
 			Init(Width, Height, cmdColor);
 		}
 
-		public void Init(int width, int height, ConsoleColor cmdColor = ConsoleColor.White)
+		public void Init(int width, int height, ConsoleColor cmdColor)
 		{
 			Width = width;
 			Height = height;
@@ -28,7 +28,7 @@ namespace command_console
 			Console.SetBufferSize (Width, Height);
 		}
 
-		public void Run(bool isBlocking = true)
+		public void Run(bool isBlocking)
 		{
 			IsAlive = true;
 

@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Text;
 using System.Threading;
+using System.Linq;
 using System.Windows.Forms;
 
 namespace command_console
@@ -26,14 +27,14 @@ namespace command_console
 		private bool m_isNewLine = false;
 		private int m_bufPos = BUF_SIZE;
 
-		public void Init(ConsoleColor cmdColor = ConsoleColor.White)
+		public void Init(ConsoleColor cmdColor)
 		{
 			Width = Console.WindowWidth;
 			Height = Console.WindowHeight;
 			Init(Width, Height, cmdColor);
 		}
 
-		public void Init(int width, int height, ConsoleColor cmdColor = ConsoleColor.White)
+		public void Init(int width, int height, ConsoleColor cmdColor)
 		{
 			Width = width;
 			Height = height;
@@ -51,7 +52,7 @@ namespace command_console
 			}
 		}
 
-		public void Run(bool isBlocking = true)
+		public void Run(bool isBlocking)
 		{
 			m_inputThread = new Thread (Input);
 			m_inputThread.SetApartmentState(ApartmentState.STA); 
@@ -188,6 +189,9 @@ namespace command_console
 
 		private void AddToHistoryCmd(string cmd)
 		{
+			if (m_history.Any (e => e == cmd))
+				return;
+
 			for (int idx = 0; idx < HISTORY_SIZE - 1; idx++) {
 				m_history [idx] = m_history [idx + 1];
 			}
@@ -248,22 +252,24 @@ namespace command_console
 		private void ScrollBufferUp()
 		{
 			m_bufPos = Math.Max (Height - 1, m_bufPos - (Height - 1));
+			DrawBuffer ();
 		}
 
 		private void ScrollBufferDown()
 		{
 			m_bufPos = Math.Min (BUF_SIZE, m_bufPos + (Height - 1));
+			DrawBuffer ();
 		}
 
 		private void DrawBuffer()
 		{
 			lock (m_buffer) {
-				int bufPos = m_bufPos - (Height - 1);
+				int bufOffset = m_bufPos - (Height - 1);
 
 				Console.SetCursorPosition (0, 0);
 
-				for (int pos = bufPos; pos < BUF_SIZE; pos++) {
-					Console.WriteLine (m_buffer [pos].PadRight (Width - 1).Remove (Width - 2));
+				for (int idx = 0; idx < (Height - 1); idx++) {
+					Console.WriteLine (m_buffer [bufOffset + idx].PadRight (Width - 1).Remove (Width - 2));
 				}
 			}
 		}

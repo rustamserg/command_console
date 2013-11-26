@@ -12,7 +12,7 @@ namespace command_console_app
 
 			TestApp test = new TestApp (cs);
 	
-			cs.Run ();
+			cs.Run (true);
 		}
 	}
 }

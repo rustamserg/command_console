@@ -13,9 +13,9 @@ namespace command_console
 		int Height { get; }
 		ConsoleColor CommandColor { get; set; }
 
-		void Init(ConsoleColor cmdColor = ConsoleColor.White);
-		void Init(int width, int height, ConsoleColor cmdColor = ConsoleColor.White);
-		void Run(bool isBlocking = false);
+		void Init(ConsoleColor cmdColor);
+		void Init(int width, int height, ConsoleColor cmdColor);
+		void Run(bool isBlocking);
 		void Stop();
 
 		void Write (string line);
