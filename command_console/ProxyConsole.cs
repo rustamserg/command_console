@@ -1,4 +1,6 @@
 using System;
+using System.Threading;
+
 
 namespace command_console
 {
@@ -10,6 +12,10 @@ namespace command_console
 		public int Width { get; private set; }
 		public int Height { get; private set; }
 		public ConsoleColor CommandColor { get; set; }
+
+		private Thread m_inputThread;
+		private AutoResetEvent m_blockEvent;
+
 
 		public void Init(ConsoleColor cmdColor)
 		{
@@ -30,18 +36,30 @@ namespace command_console
 
 		public void Run(bool isBlocking)
 		{
+			m_inputThread = new Thread (Input);
+			m_inputThread.Start ();
 			IsAlive = true;
 
-			while (IsAlive) {
-				string cmd = Console.ReadLine ();
-				if (OnCommand != null)
-					OnCommand (cmd);
+			if (isBlocking) {
+				m_blockEvent = new AutoResetEvent (false);
+				m_blockEvent.WaitOne ();
 			}
+
+			IsAlive = true;
 		}
 
 		public void Stop()
 		{
 			IsAlive = false;
+
+			if (m_blockEvent != null)
+				m_blockEvent.Set ();
+
+			try {
+				if (m_inputThread.IsAlive)
+					m_inputThread.Abort();
+			}
+			catch (Exception) {}
 		}
 
 		public void Write (string line)
@@ -74,6 +92,15 @@ namespace command_console
 				return;
 
 			Console.WriteLine (format, args);
+		}
+
+		private void Input()
+		{
+			while (IsAlive) {
+				string cmd = Console.ReadLine ();
+				if (OnCommand != null)
+					OnCommand (cmd);
+			}
 		}
 	}
 }
