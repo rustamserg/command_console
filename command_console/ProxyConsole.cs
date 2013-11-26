@@ -11,6 +11,13 @@ namespace command_console
 		public int Height { get; private set; }
 		public ConsoleColor CommandColor { get; set; }
 
+		public void Init(ConsoleColor cmdColor = ConsoleColor.White)
+		{
+			Width = Console.WindowWidth;
+			Height = Console.WindowHeight;
+			Init(Width, Height, cmdColor);
+		}
+
 		public void Init(int width, int height, ConsoleColor cmdColor = ConsoleColor.White)
 		{
 			Width = width;

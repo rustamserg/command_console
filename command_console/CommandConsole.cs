@@ -26,6 +26,12 @@ namespace command_console
 		private bool m_isNewLine = false;
 		private int m_bufPos = BUF_SIZE;
 
+		public void Init(ConsoleColor cmdColor = ConsoleColor.White)
+		{
+			Width = Console.WindowWidth;
+			Height = Console.WindowHeight;
+			Init(Width, Height, cmdColor);
+		}
 
 		public void Init(int width, int height, ConsoleColor cmdColor = ConsoleColor.White)
 		{
