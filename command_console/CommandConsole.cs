@@ -4,6 +4,7 @@ using System.Text;
 using System.Threading;
 using System.Linq;
 using System.Windows.Forms;
+using System.Collections.Generic;
 
 namespace command_console
 {
@@ -253,7 +254,7 @@ namespace command_console
 				}
 
 				var merged = m_buffer [BUF_SIZE - 1].Line + line.Line;
-				var lines = merged.Replace("\r", "").Split ('\n');
+				var lines = SplitLine(merged);
 
 				m_buffer [BUF_SIZE - 1] = new ConsoleLine(line.Color, lines [0]);
 				m_isNewLine = lines.Length > 1;
@@ -274,7 +275,7 @@ namespace command_console
 				}
 
 				var merged = m_buffer [BUF_SIZE - 1].Line + line.Line;
-				var lines = merged.Replace("\r", "").Split ('\n');
+				var lines = SplitLine(merged);
 
 				m_buffer [BUF_SIZE - 1] = new ConsoleLine(line.Color, lines [0]);
 				m_isNewLine = true;
@@ -284,6 +285,25 @@ namespace command_console
 				}
 				DrawBuffer ();
 			}
+		}
+
+		private string[] SplitLine(string line)
+		{
+			var lines = new List<string> ();
+			var rawlines = line.Replace("\r", "").Split ('\n');
+
+			foreach (var rl in rawlines) {
+				int idx = 0;
+				while (true) {
+					var ln = rl.Substring(idx, Math.Min(Width - 1, rl.Length - idx));
+					if (ln != string.Empty) {
+						lines.Add (ln);
+						idx += ln.Length;
+					} else
+						break; 
+				}
+			}
+			return lines.ToArray ();
 		}
 
 		private void PushToBuffer(ConsoleLine line)
@@ -316,8 +336,7 @@ namespace command_console
 
 				for (int idx = 0; idx < (Height - 1); idx++) {
 					var line = m_buffer [bufOffset + idx];
-					ApplyColorAspect(line.Color, () =>
-						Console.WriteLine (line.Line.PadRight (Width - 1).Remove (Width - 2)));
+					ApplyColorAspect (line.Color, () => Console.WriteLine (line.Line.PadRight(Width - 1)));
 				}
 			}
 		}
