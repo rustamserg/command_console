@@ -24,7 +24,16 @@ namespace command_console_app
 				Thread.Sleep (2000);
 
 				m_console.Write ("Current time in UTC {0}", DateTime.UtcNow.ToString ());
-				m_console.WriteLine ("  Local time {0}", DateTime.Now.ToString());	 
+				m_console.WriteLine ("  Local time {0}", DateTime.Now.ToString());
+				m_console.WriteLine ("Test color message {0}", ConsoleColor.Green, DateTime.Now.ToString ());
+
+				try {
+					string a = null;
+					m_console.WriteLine("Length: {0}", a.Length);
+				}
+				catch (Exception ex) {
+					m_console.WriteLine (ex.ToString (), ConsoleColor.Red);
+				}	 
 			}
 		}
 
