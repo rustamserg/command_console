@@ -22,6 +22,10 @@ namespace command_console
 		void Write (string format, params object[] args);
 		void WriteLine (string line);
 		void WriteLine (string format, params object[] args);
+
+		void Write (string line, ConsoleColor lineColor);
+		void Write (string format, ConsoleColor lineColor, params object[] args);
+		void WriteLine (string line, ConsoleColor lineColor);
+		void WriteLine (string format, ConsoleColor lineColor, params object[] args);
 	}
 }
-

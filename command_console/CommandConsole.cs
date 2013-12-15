@@ -16,10 +16,25 @@ namespace command_console
 		public int Height { get; private set; }
 		public ConsoleColor CommandColor { get; set; }
 
+		class ConsoleLine {
+			public ConsoleColor Color;
+			public string Line;
+
+			public ConsoleLine() :this(Console.ForegroundColor, string.Empty) {} 
+			public ConsoleLine(string ln) : this(Console.ForegroundColor, ln) {}
+
+			public ConsoleLine(ConsoleColor clr, string ln)
+			{
+				Color = clr;
+				Line = ln;
+			}
+
+			public static readonly ConsoleLine Empty = new ConsoleLine();
+		}
 
 		private static readonly int BUF_SIZE = 1024;
 		private static readonly int HISTORY_SIZE = 100;
-		private string[] m_buffer = new string[BUF_SIZE];
+		private ConsoleLine[] m_buffer = new ConsoleLine[BUF_SIZE];
 		private string[] m_history = new string[HISTORY_SIZE];
 		private int m_historyCursor = HISTORY_SIZE - 1;
 		private Thread m_inputThread;
@@ -45,7 +60,7 @@ namespace command_console
 			Console.CursorVisible = false;
 
 			for (int i = 0; i < BUF_SIZE; i++) {
-				m_buffer [i] = string.Empty;
+				m_buffer [i] = ConsoleLine.Empty;
 			}
 			for (int i = 0; i < HISTORY_SIZE; i++) {
 				m_history [i] = string.Empty;
@@ -84,7 +99,7 @@ namespace command_console
 			if (!IsAlive)
 				return;
 
-			AppendToBuffer (line);
+			AppendToBuffer (new ConsoleLine(line));
 		}
 
 		public void Write(string format, params object[] args)
@@ -93,7 +108,7 @@ namespace command_console
 				return;
 
 			var line = string.Format (format, args);
-			AppendToBuffer (line);
+			AppendToBuffer (new ConsoleLine(line));
 		}
 
 		public void WriteLine(string line)
@@ -101,7 +116,7 @@ namespace command_console
 			if (!IsAlive)
 				return;
 
-			AddToBuffer(line);
+			AddToBuffer(new ConsoleLine(line));
 		}
 
 		public void WriteLine(string format, params object[] args)
@@ -110,9 +125,43 @@ namespace command_console
 				return;
 
 			var line = string.Format (format, args);
-			AddToBuffer (line);
-		}	
-		
+			AddToBuffer (new ConsoleLine(line));
+		}
+
+		public void Write (string line, ConsoleColor lineColor)
+		{
+			if (!IsAlive)
+				return;
+
+			AppendToBuffer (new ConsoleLine (lineColor, line));
+		}
+
+		public void Write (string format, ConsoleColor lineColor, params object[] args)
+		{
+			if (!IsAlive)
+				return;
+
+			var line = string.Format (format, args);
+			AppendToBuffer (new ConsoleLine (lineColor, line));
+		}
+
+		public void WriteLine (string line, ConsoleColor lineColor)
+		{
+			if (!IsAlive)
+				return;
+
+			AddToBuffer (new ConsoleLine (lineColor, line));
+		}
+
+		public void WriteLine (string format, ConsoleColor lineColor, params object[] args)
+		{
+			if (!IsAlive)
+				return;
+
+			var line = string.Format (format, args);
+			AddToBuffer (new ConsoleLine (lineColor, line));
+		}
+
 		private void Input()
 		{
 			while (true) {
@@ -165,10 +214,7 @@ namespace command_console
 		{
 			lock (m_buffer) {
 				Console.SetCursorPosition (0, Height - 1);
-				var oldColor = Console.ForegroundColor;
-				Console.ForegroundColor = CommandColor;
-				Console.Write (cmd.PadRight(Width - 1).Remove(Width - 2));
-				Console.ForegroundColor = oldColor;
+				ApplyColorAspect (CommandColor, () => Console.Write (cmd.PadRight (Width - 1).Remove (Width - 2)));
 			}
 		}
 
@@ -198,49 +244,49 @@ namespace command_console
 			m_history [HISTORY_SIZE - 1] = cmd;
 		}
 
-		private void AppendToBuffer(string line)
+		private void AppendToBuffer(ConsoleLine line)
 		{
 			lock (m_buffer) {
 				if (m_isNewLine) {
-					PushToBuffer (string.Empty);
+					PushToBuffer (ConsoleLine.Empty);
 					m_isNewLine = false;
 				}
 
-				var merged = m_buffer [BUF_SIZE - 1] + line;
+				var merged = m_buffer [BUF_SIZE - 1].Line + line.Line;
 				var lines = merged.Replace("\r", "").Split ('\n');
 
-				m_buffer [BUF_SIZE - 1] = lines [0];
+				m_buffer [BUF_SIZE - 1] = new ConsoleLine(line.Color, lines [0]);
 				m_isNewLine = lines.Length > 1;
 
 				for (int i = 1; i < lines.Length; i++) {
-					PushToBuffer (lines [i]);
+					PushToBuffer (new ConsoleLine(line.Color, lines [i]));
 				}
 				DrawBuffer ();
 			}
 		}
 
-		private void AddToBuffer(string line)
+		private void AddToBuffer(ConsoleLine line)
 		{
 			lock (m_buffer) {
 				if (m_isNewLine) {
-					PushToBuffer (string.Empty);
+					PushToBuffer (ConsoleLine.Empty);
 					m_isNewLine = false;
 				}
 
-				var merged = m_buffer [BUF_SIZE - 1] + line;
+				var merged = m_buffer [BUF_SIZE - 1].Line + line.Line;
 				var lines = merged.Replace("\r", "").Split ('\n');
 
-				m_buffer [BUF_SIZE - 1] = lines [0];
+				m_buffer [BUF_SIZE - 1] = new ConsoleLine(line.Color, lines [0]);
 				m_isNewLine = true;
 
 				for (int i = 1; i < lines.Length; i++) {
-					PushToBuffer (lines [i]);
+					PushToBuffer (new ConsoleLine(line.Color, lines [i]));
 				}
 				DrawBuffer ();
 			}
 		}
 
-		private void PushToBuffer(string line)
+		private void PushToBuffer(ConsoleLine line)
 		{
 			for (int idx = 0; idx < BUF_SIZE - 1; idx++) {
 				m_buffer [idx] = m_buffer [idx + 1];
@@ -269,9 +315,19 @@ namespace command_console
 				Console.SetCursorPosition (0, 0);
 
 				for (int idx = 0; idx < (Height - 1); idx++) {
-					Console.WriteLine (m_buffer [bufOffset + idx].PadRight (Width - 1).Remove (Width - 2));
+					var line = m_buffer [bufOffset + idx];
+					ApplyColorAspect(line.Color, () =>
+						Console.WriteLine (line.Line.PadRight (Width - 1).Remove (Width - 2)));
 				}
 			}
+		}
+
+		private void ApplyColorAspect(ConsoleColor clr, Action action)
+		{
+			var curClr = Console.ForegroundColor;
+			Console.ForegroundColor = clr;
+			action ();
+			Console.ForegroundColor = curClr;
 		}
 	}
 }

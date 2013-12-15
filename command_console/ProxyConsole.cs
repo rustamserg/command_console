@@ -94,6 +94,46 @@ namespace command_console
 			Console.WriteLine (format, args);
 		}
 
+		public void Write (string line, ConsoleColor lineColor)
+		{
+			if (!IsAlive)
+				return;
+
+			ApplyColorAspect (lineColor, () => Console.Write (line));
+		}
+
+		public void Write (string format, ConsoleColor lineColor, params object[] args)
+		{
+			if (!IsAlive)
+				return;
+
+			ApplyColorAspect (lineColor, () => Console.Write (format, args));
+		}
+
+		public void WriteLine (string line, ConsoleColor lineColor)
+		{
+			if (!IsAlive)
+				return;
+
+			ApplyColorAspect (lineColor, () => Console.WriteLine (line));
+		}
+
+		public void WriteLine (string format, ConsoleColor lineColor, params object[] args)
+		{
+			if (!IsAlive)
+				return;
+
+			ApplyColorAspect (lineColor, () => Console.WriteLine (format, args));
+		}
+
+		private void ApplyColorAspect(ConsoleColor clr, Action action)
+		{
+			var curClr = Console.ForegroundColor;
+			Console.ForegroundColor = clr;
+			action ();
+			Console.ForegroundColor = curClr;
+		}
+
 		private void Input()
 		{
 			while (IsAlive) {

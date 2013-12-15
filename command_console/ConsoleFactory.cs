@@ -11,21 +11,19 @@ namespace command_console
 			Proxy
 		}
 
-		private static Dictionary<Type, IConsole> m_consoles = new Dictionary<Type, IConsole>();
-		
-		public static IConsole Get(Type console)
+		public static IConsole Console { get; private set; }
+
+		public static IConsole Create(Type console)
 		{
-			IConsole cs;
-			if (m_consoles.TryGetValue (console, out cs))
-				return cs;
+			if (Console != null)
+				return Console;
 
 			if (console == Type.Command)
-				cs = new CommandConsole ();
+				Console = new CommandConsole ();
 			else if (console == Type.Proxy)
-				cs = new ProxyConsole ();
+				Console = new ProxyConsole ();
 
-			m_consoles [console] = cs;
-			return cs; 
+			return Console; 
 		}
 	}
 }
