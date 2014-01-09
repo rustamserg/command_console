@@ -66,6 +66,7 @@ namespace command_console
 			for (int i = 0; i < HISTORY_SIZE; i++) {
 				m_history [i] = string.Empty;
 			}
+			IsAlive = true;
 		}
 
 		public void Run(bool isBlocking)
@@ -73,7 +74,6 @@ namespace command_console
 			m_inputThread = new Thread (Input);
 			m_inputThread.SetApartmentState(ApartmentState.STA); 
 			m_inputThread.Start ();
-			IsAlive = true;
 
 			if (isBlocking) {
 				m_blockEvent = new AutoResetEvent (false);

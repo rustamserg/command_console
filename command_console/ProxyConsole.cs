@@ -32,20 +32,19 @@ namespace command_console
 
 			Console.SetWindowSize (Width, Height);
 			Console.SetBufferSize (Width, Height);
+
+			IsAlive = true;
 		}
 
 		public void Run(bool isBlocking)
 		{
 			m_inputThread = new Thread (Input);
 			m_inputThread.Start ();
-			IsAlive = true;
 
 			if (isBlocking) {
 				m_blockEvent = new AutoResetEvent (false);
 				m_blockEvent.WaitOne ();
 			}
-
-			IsAlive = true;
 		}
 
 		public void Stop()
