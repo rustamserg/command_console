@@ -58,7 +58,6 @@ namespace command_console
 
 			Console.SetWindowSize (Width, Height);
 			Console.SetBufferSize (Width, Height);
-			Console.CursorVisible = false;
 
 			for (int i = 0; i < BUF_SIZE; i++) {
 				m_buffer [i] = ConsoleLine.Empty;
